@@ -80,6 +80,8 @@ export interface CharityDonation {
 }
 
 export interface PortalContextType {
+  language: 'en' | 'mm';
+  setLanguage: (lang: 'en' | 'mm') => void;
   employees: Employee[];
   disbursements: DisbursementItem[];
   repayments: RepaymentItem[];
@@ -119,6 +121,8 @@ export interface PortalContextType {
   approveOnboarding: (id: string) => void;
   disburseWage: (ref: string) => void;
   addEmployee: (emp: Omit<Employee, 'id'>) => void;
+  updateEmployee: (empId: string, updated: Partial<Employee>) => void;
+  bulkUpdateEmployees: (dept: string, salaryMultiplier: number, statusChange?: string) => void;
   toggleWhitelist: (empId: string) => void;
   executeBulkUpload: (items: DiffItem[]) => void;
   applyDiffs: () => void;
@@ -132,6 +136,7 @@ export interface PortalContextType {
 const PortalStateContext = createContext<PortalContextType | undefined>(undefined);
 
 export function PortalStateProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<'en' | 'mm'>('en');
   const [employees, setEmployees] = useState<any[]>(initialEmployees);
   const [disbursements, setDisbursements] = useState<DisbursementItem[]>(initialDisbursements);
   const [repayments, setRepayments] = useState<RepaymentItem[]>(initialRepayments);
@@ -235,6 +240,32 @@ export function PortalStateProvider({ children }: { children: React.ReactNode })
     const newEmp = { ...emp, id: newId };
     setEmployees((prev) => [...prev, newEmp]);
     addLog(`Created employee ${emp.name} (${newId})`);
+  };
+
+  const updateEmployee = (empId: string, updated: Partial<Employee>) => {
+    setEmployees((prev) =>
+      prev.map((e) => {
+        if (e.id === empId) {
+          addLog(`Updated employee ${e.name} (${empId}): ${JSON.stringify(updated)}`);
+          return { ...e, ...updated };
+        }
+        return e;
+      })
+    );
+  };
+
+  const bulkUpdateEmployees = (dept: string, salaryMultiplier: number, statusChange?: string) => {
+    setEmployees((prev) =>
+      prev.map((e) => {
+        if (dept === 'ALL' || e.department === dept) {
+          const newSalary = salaryMultiplier !== 1 ? Math.round(e.salary * salaryMultiplier) : e.salary;
+          const newStatus = statusChange && statusChange !== 'NO_CHANGE' ? statusChange : e.status;
+          return { ...e, salary: newSalary, status: newStatus };
+        }
+        return e;
+      })
+    );
+    addLog(`Executed bulk update for department: ${dept}. Multiplier applied: ${salaryMultiplier}x. Status change: ${statusChange || 'None'}`);
   };
 
   const toggleWhitelist = (empId: string) => {
@@ -368,12 +399,13 @@ export function PortalStateProvider({ children }: { children: React.ReactNode })
 
   return (
     <PortalStateContext.Provider value={{
+      language, setLanguage,
       employees, disbursements, repayments, onboardings, logs, templates, policies, smartCaps,
       freezeList, diffs, offboardingList, exportFormats, cycleConfigs, rbac,
       charities, donations, companyMatchPercent, addCharityCampaign, donateToCampaign, setCompanyMatchPercent,
       focusSessionActive, focusTitle, focusTimeRemaining, focusSessionCount, focusHistory,
       startFocusSession, stopFocusSession, updateFocusTime, addFocusHistory,
-      addLog, approveOnboarding, disburseWage, addEmployee, toggleWhitelist, executeBulkUpload,
+      addLog, approveOnboarding, disburseWage, addEmployee, updateEmployee, bulkUpdateEmployees, toggleWhitelist, executeBulkUpload,
       applyDiffs, performClearance, unfreezeEmployee, savePolicy, addTemplate, addRepayment
     }}>
       {children}
