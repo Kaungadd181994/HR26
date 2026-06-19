@@ -1,0 +1,8 @@
+{
+  "name": "Remix: HR",
+  "description": "Enterprise-grade Earned Wage Access (EWA) company-side portal, real-time accrued salary tracking, compliance guardrails, and treasury liquidity stress-simulation cockpit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
